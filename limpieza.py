@@ -30,30 +30,33 @@ dfm = dfm.drop_duplicates()
 dfr = dfr.drop_duplicates()
 
 # Valores perdidos dfm
-dfm = dfm[dfm.movieId.apply(lambda x: np.isreal(x))]
+dfm = dfm[np.isreal(dfm['movieId'])]
 dfm = dfm.dropna(subset=['movieId'])
 
-#TODO: poner bien regex
 def regex_filter(val):
-    regex = "[a-zA-Z\- \t]"
-    return val and re.search(regex, val):
+    regex = "[a-zA-Z \-]+(\|[a-zA-Z \-]+)*$"
+    if val and re.fullmatch(regex, val):
+        return True
+    return False
 
-dfm = dfm.dropna(subset=['genres'])
 dfm = dfm[dfm['genres'].apply(regex_filter)]
 
 # Valores perdidos dfr
 dfr = dfr.dropna(subset=['movieId'])
-dfr = dfr[dfr.movieId.apply(lambda x: np.isreal(x))]
+dfr = dfr[np.isreal(dfr['movieId'])]
 
 dfr = dfr.dropna(subset=['rating'])
-dfr = dfr[dfr.rating.apply(lambda x: np.isreal(x) and x >= 0 
-                           and x <= 5 and int(2*x) == 2*x)]
+dfr = dfr[(np.isreal(dfr['rating'])) & 
+          (dfr['rating'].isin(np.arange(0, 5.5, 0.5)))]
 
-dfr = dfr[dfr.timestamp.apply(lambda x: np.isreal(x) and x >= 0 
-                           and x <= time.time())]
+dfr = dfr.dropna(subset=['timestamp'])
+dfr = dfr[(np.isreal(dfr['timestamp'])) & 
+          (dfr['timestamp'] >= 0) &
+          (dfr['timestamp'] <= time.time())]
 
 """
 GUARDAR DATOS ACTUALIZADOS
 """
 
-#TODO. Cómo lo gestiona airflow?
+dfm.to_csv("movies_procesadas.csv", index = False)
+dfr.to_csv("ratings_procesados.csv", index = False)
